@@ -42,7 +42,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function conversation()
+    public function conversations()
     {
         return $this->belongsToMany(Conversation::class,'participants')
         ->latest('last_message_id')

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('label')->nullable();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->enum('type',['peer' , 'group'])->default('peer');
             $table->timestamps();
         });
     }
