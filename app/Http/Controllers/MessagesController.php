@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageCreated;
 use App\Models\Conversation;
 use App\Models\Recipient;
 use Carbon\Traits\Converter;
@@ -27,6 +28,9 @@ class MessagesController extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::guard('api')->user();
+        
+       
         $request->validate([
             'message'=>['required' , 'string'],
             'conversation_id'=> [
@@ -45,7 +49,7 @@ class MessagesController extends Controller
             ],
         ]);
         $conversation_id = $request->conversation_id;
-        $user = Auth::user();
+
         $user_id = $request->user_id;
       
 
@@ -66,9 +70,11 @@ class MessagesController extends Controller
                 if(!$conversation)
                 {
                     $conversation = Conversation::create([
-                        'user_id', $user->id,
+                        'user_id'=> $user->id,
+                        'label'=>'solo',
+                        
                     ]);
-
+                    
                     $conversation->participants()->attach([
                         $user->id =>['joined_at' => now()],
                         $user_id =>['joined_at' => now()],
@@ -77,7 +83,7 @@ class MessagesController extends Controller
 
     
             }
-            $message = $conversation->message()->create([
+            $message = $conversation->messages()->create([
                 'user_id'=>$user->id,
                 'body'=> $request->message,
             ]);
@@ -90,7 +96,10 @@ class MessagesController extends Controller
             $conversation->update([
                 'last_message_id' =>$message->id,
             ]);
+
             DB::commit();
+            broadcast(new MessageCreated($message));
+            // event(new MessageCreated($message));
         } catch (\Throwable $e) {
             DB::rollBack();
             throw $e;
